@@ -39,3 +39,31 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+/src/generated/prisma
+
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# env files (VERY IMPORTANT)
+.env
+.env.local
+.env.*.local
+
+# clerk / auth
+.clerk/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# misc
+.DS_Store
