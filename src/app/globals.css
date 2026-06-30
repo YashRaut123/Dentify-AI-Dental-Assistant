@@ -212,3 +212,4 @@ body {
 .animate-sound-wave {
   animation: sound-wave 1.2s ease-in-out infinite;
 }
+export {};

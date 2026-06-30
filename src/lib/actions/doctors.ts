@@ -28,7 +28,8 @@ interface CreateDoctorInput {
   phone?: string;
   speciality: string;
   gender: Gender;
-  isActive: boolean;
+  isActive?: boolean;
+  status?: boolean;
 }
 
 type CreateDoctorResult = {
@@ -48,7 +49,7 @@ export async function createDoctor(input: CreateDoctorInput): Promise<CreateDoct
     const speciality = input.speciality?.trim();
     const phone = input.phone?.trim() || undefined;
     const gender = input.gender;
-    const isActive = input.isActive ?? true;
+    const isActive = typeof input.status === "boolean" ? input.status : input.isActive ?? true;
     const clerkId = input.clerkId?.trim() || `doctor_${crypto.randomUUID()}`;
 
     if (!name || !email || !speciality || !gender) {
@@ -59,12 +60,21 @@ export async function createDoctor(input: CreateDoctorInput): Promise<CreateDoct
       };
     }
 
+    if (!Object.values(Gender).includes(gender)) {
+      return {
+        success: false,
+        reason: "VALIDATION",
+        message: "Gender must be either MALE or FEMALE.",
+      };
+    }
+
     // upsert by email (email must be @unique in schema)
     const doctor = await prisma.doctor.upsert({
       where: { email },
       update: {
         name,
         speciality,
+        gender,
         isActive,
         ...(phone ? { phone } : {}),
       },
@@ -73,6 +83,7 @@ export async function createDoctor(input: CreateDoctorInput): Promise<CreateDoct
         name,
         email,
         speciality,
+        gender,
         isActive,
         ...(phone ? { phone } : {}),
       },
@@ -126,7 +137,9 @@ interface UpdateDoctorInput {
   email?: string;
   phone?: string;
   speciality?: string;
+  gender?: Gender;
   isActive?: boolean;
+  status?: boolean;
 }
 type UpdateDoctorResult = {
   success: true;
@@ -142,6 +155,8 @@ export async function updateDoctor(input: UpdateDoctorInput & { specialization?:
     name: input?.name,
     email: input?.email,
     phone: input?.phone,
+    gender: input?.gender,
+    status: input?.status,
     specialization: input?.specialization,
     speciality: input?.speciality,
   });
@@ -162,12 +177,18 @@ export async function updateDoctor(input: UpdateDoctorInput & { specialization?:
     const email = normalizeOptional(input.email)?.toLowerCase();
     const phone = normalizeOptional(input.phone);
     const speciality = normalizeOptional(input.speciality ?? input.specialization);
+    const gender = input.gender;
+    const isActive = typeof input.status === "boolean" ? input.status : input.isActive;
 
     if (name === "") return { success: false, message: "Name cannot be empty." };
     if (email === "") return { success: false, message: "Email cannot be empty." };
     if (phone === "") return { success: false, message: "Phone cannot be empty." };
     if (speciality === "") {
       return { success: false, message: "Speciality cannot be empty." };
+    }
+
+    if (gender !== undefined && !Object.values(Gender).includes(gender)) {
+      return { success: false, message: "Gender must be either MALE or FEMALE." };
     }
 
     const currentDoctor = await prisma.doctor.findUnique({
@@ -184,7 +205,8 @@ export async function updateDoctor(input: UpdateDoctorInput & { specialization?:
       ...(email !== undefined ? { email } : {}),
       ...(phone !== undefined ? { phone } : {}),
       ...(speciality !== undefined ? { speciality } : {}),
-      ...(typeof input.isActive === "boolean" ? { isActive: input.isActive } : {}),
+      ...(gender !== undefined ? { gender } : {}),
+      ...(typeof isActive === "boolean" ? { isActive } : {}),
     };
 
     console.log("[updateDoctor] prisma input:", {

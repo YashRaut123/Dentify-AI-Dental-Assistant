@@ -8,6 +8,11 @@ export async function syncUser() {
     const user = await currentUser();
     if (!user) return;
 
+    console.log("[syncUser] clerk user id:", user.id);
+    if (typeof user.id !== "string" || !user.id.trim()) {
+      throw new Error("Authentication error: clerkId is missing or invalid.");
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { clerkId: user.id } });
     if (existingUser) return existingUser;
 
